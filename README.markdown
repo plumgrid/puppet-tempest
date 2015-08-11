@@ -1,7 +1,7 @@
 Tempest
 =======
 
-5.0.0 - 2014.2.0 - Juno
+6.0.0 - 2015.1 - Kilo
 
 Module for installing and configuring tempest.
 
@@ -22,15 +22,3 @@ To run:
 bundle install
 bundle exec rspec spec/acceptance
 ``
-
-Release Notes
--------------
-
-** 5.0.0 **
-
-* Stable Juno release
-* Pinned vcsrepo dependency to 2.x
-* Bumped stdlib dependency to 4.x
-* Added ability to hide secrets from puppet logs
-* Removed orphaned os_concat function
-* Removed dependencies on mysql and postgresql devel libraries
