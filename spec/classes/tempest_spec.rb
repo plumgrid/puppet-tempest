@@ -2,6 +2,12 @@ require 'spec_helper'
 
 describe 'tempest' do
   shared_examples 'tempest' do
+
+    let :pre_condition do
+      "include ::glance
+       class { 'neutron': rabbit_password => 'passw0rd' }"
+    end
+
     context 'without parameters' do
       describe "should raise error" do
         it { expect { is_expected.to contain_class('tempest::params') }.to raise_error(Puppet::Error, /A value for either image_name or image_ref/) }
@@ -142,15 +148,6 @@ describe 'tempest' do
           )
         end
 
-        it 'load configuration' do
-          is_expected.to contain_file('/var/lib/tempest/etc/tempest.conf').with(
-            :replace => false,
-            :source  => '/var/lib/tempest/etc/tempest.conf.sample',
-            :require => "Vcsrepo[/var/lib/tempest]",
-            :owner   => 'root'
-          )
-        end
-
         it 'configure tempest config' do
           is_expected.to contain_tempest_config('compute/change_password_available').with(:value => nil)
           is_expected.to contain_tempest_config('compute/flavor_ref').with(:value => nil)
@@ -182,14 +179,19 @@ describe 'tempest' do
           is_expected.to contain_tempest_config('identity-feature-enabled/api_v3').with(:value => true)
           is_expected.to contain_tempest_config('network/public_network_id').with(:value => nil)
           is_expected.to contain_tempest_config('network/public_router_id').with(:value => '')
+          is_expected.to contain_tempest_config('dashboard/login_url').with(:value => nil)
+          is_expected.to contain_tempest_config('dashboard/dashboard_url').with(:value => nil)
           is_expected.to contain_tempest_config('service_available/cinder').with(:value => true)
           is_expected.to contain_tempest_config('service_available/glance').with(:value => true)
           is_expected.to contain_tempest_config('service_available/heat').with(:value => false)
           is_expected.to contain_tempest_config('service_available/ceilometer').with(:value => false)
+          is_expected.to contain_tempest_config('service_available/aodh').with(:value => false)
           is_expected.to contain_tempest_config('service_available/horizon').with(:value => true)
           is_expected.to contain_tempest_config('service_available/neutron').with(:value => true)
           is_expected.to contain_tempest_config('service_available/nova').with(:value => true)
+          is_expected.to contain_tempest_config('service_available/sahara').with(:value => false)
           is_expected.to contain_tempest_config('service_available/swift').with(:value => false)
+          is_expected.to contain_tempest_config('service_available/trove').with(:value => false)
           is_expected.to contain_tempest_config('whitebox/db_uri').with(:value => nil)
           is_expected.to contain_tempest_config('cli/cli_dir').with(:value => nil)
           is_expected.to contain_tempest_config('oslo_concurrency/lock_path').with(:value => '/var/lib/tempest')
@@ -198,6 +200,8 @@ describe 'tempest' do
           is_expected.to contain_tempest_config('DEFAULT/use_stderr').with(:value => true)
           is_expected.to contain_tempest_config('DEFAULT/use_syslog').with(:value => false)
           is_expected.to contain_tempest_config('DEFAULT/log_file').with(:value => nil)
+          is_expected.to contain_tempest_config('scenario/img_dir').with(:value => '/var/lib/tempest')
+          is_expected.to contain_tempest_config('scenario/img_file').with(:value => 'cirros-0.3.4-x86_64-disk.img')
         end
 
         it 'set glance id' do
@@ -205,14 +209,12 @@ describe 'tempest' do
             :ensure            => 'present',
             :tempest_conf_path => '/var/lib/tempest/etc/tempest.conf',
             :image_name        => 'image name',
-            :require           => 'File[/var/lib/tempest/etc/tempest.conf]'
           )
 
           is_expected.to contain_tempest_glance_id_setter('image_ref_alt').with(
             :ensure            => 'present',
             :tempest_conf_path => '/var/lib/tempest/etc/tempest.conf',
             :image_name        => 'image name alt',
-            :require           => 'File[/var/lib/tempest/etc/tempest.conf]'
           )
         end
 
@@ -221,7 +223,6 @@ describe 'tempest' do
             :ensure            => 'present',
             :tempest_conf_path => '/var/lib/tempest/etc/tempest.conf',
             :network_name      => 'network name',
-            :require           => 'File[/var/lib/tempest/etc/tempest.conf]'
           )
         end
       end
@@ -248,7 +249,8 @@ describe 'tempest' do
 
   context 'on RedHat platforms' do
     let :facts do
-      { :osfamily => 'RedHat' }
+      { :osfamily               => 'RedHat',
+        :operatingsystemrelease => '7' }
     end
 
     let :platform_params do
